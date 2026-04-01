@@ -1,0 +1,138 @@
+spec_version: "1.0"
+name: customer-support-ticket-resolution
+runtime: fastapi
+entrypoint: server.app:app
+port: 8000
+description: >
+  A deterministic OpenEnv environment for realistic customer support operations.
+  Agents must handle incomplete information, changing customer mood, SLA pressure,
+  constrained action sequences, and the decision to resolve versus escalate.
+action_space:
+  type: object
+  description: Structured support operations actions with sequence constraints.
+  fields:
+    action_type:
+      type: enum
+      values:
+        - classify_ticket
+        - set_priority
+        - request_info
+        - respond
+        - resolve
+        - escalate
+    ticket_id:
+      type: string
+      description: Ticket identifier for the currently active case.
+    category:
+      type: optional_enum
+      values:
+        - account_access
+        - billing
+        - shipping
+        - technical
+        - security
+    priority:
+      type: optional_enum
+      values:
+        - low
+        - medium
+        - high
+        - critical
+    response_text:
+      type: optional_string
+      description: Customer-facing message for respond, resolve, or escalate actions.
+    resolution_code:
+      type: optional_string
+      description: Agent-supplied resolution descriptor for closing the ticket.
+    question:
+      type: optional_string
+      description: Clarification question used with request_info.
+    notes:
+      type: optional_string
+      description: Internal note or escalation rationale.
+observation_space:
+  type: object
+  description: Partial observable ticket state. Hidden ground truth is intentionally not exposed.
+  fields:
+    task_id:
+      type: string
+    difficulty:
+      type: string
+    objective:
+      type: string
+    ticket:
+      type: object
+      description: Ticket metadata and the visible customer profile.
+    current_status:
+      type: enum
+      values:
+        - open
+        - needs_info
+        - in_progress
+        - resolved
+        - escalated
+    conversation_history:
+      type: array
+      description: Full visible conversation transcript including simulated customer replies.
+    history:
+      type: array
+      description: Agent action history with reward deltas and post-step status.
+    relevant_data:
+      type: object
+      description: Knowledge base context, known customer facts, workflow hints, and SLA bucket.
+    available_actions:
+      type: array
+    completed_milestones:
+      type: array
+    last_agent_action:
+      type: object
+      nullable: true
+    customer_mood:
+      type: enum
+      values:
+        - calm
+        - frustrated
+        - angry
+    steps_taken:
+      type: integer
+    max_steps:
+      type: integer
+reward_description:
+  summary: >
+    Rewards are trajectory-based. Agents gain incremental reward for correct
+    classification, good priority setting, useful clarification questions,
+    complete customer communication, and the correct final action. Penalties
+    apply to invalid sequences, repeated actions, weak responses, hallucinated
+    resolutions, unnecessary escalation, premature resolution, and every additional step due to SLA pressure.
+  components:
+    correct_classification: 0.2
+    correct_priority: 0.1
+    good_clarification_question: 0.2
+    correct_resolution: 0.3
+    correct_escalation: 0.2
+    invalid_action: -0.1
+    repeated_action: -0.1
+    step_pressure: -0.05
+    hallucinated_resolution: -0.2
+    unnecessary_escalation: -0.2
+    premature_resolution: -0.2
+reward_definition:
+  summary: >
+    Rewards are trajectory-based. Agents gain incremental reward for correct
+    classification, good priority setting, useful clarification questions,
+    complete customer communication, and the correct final action. Penalties
+    apply to invalid sequences, repeated actions, weak responses, hallucinated
+    resolutions, unnecessary escalation, premature resolution, and every additional step due to SLA pressure.
+tasks:
+  - id: easy_password_reset_triage
+    difficulty: easy
+    description: Resolve a straightforward account lockout without unnecessary escalation.
+  - id: medium_refund_resolution
+    difficulty: medium
+    description: Resolve a refund-delay ticket with strong customer communication under moderate pressure.
+  - id: hard_enterprise_incident
+    difficulty: hard
+    description: Gather missing diagnostics and escalate a frustrated enterprise SSO outage under tight SLA pressure.
+  - id: medium_security_alert
+    difficulty: medium
+    description: Respond to a suspicious login alert with security guidance and account protection steps.
