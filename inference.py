@@ -13,10 +13,15 @@ from models import Action, ActionType, Observation, Priority, TicketCategory
 
 class WeakBaselineAgent:
     def __init__(self) -> None:
+
         self.api_base_url = os.getenv("API_BASE_URL")
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN")
         self.model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
-        self.client = OpenAI(base_url=self.api_base_url, api_key=self.api_key) if self.api_base_url and self.api_key else None
+        self.client = (
+            OpenAI(base_url=self.api_base_url, api_key=self.api_key)
+            if self.api_base_url and self.api_key
+            else None
+        )
         self.task_attempts: Dict[str, int] = {}
 
     def next_action(self, observation: Observation) -> Tuple[Action, str]:
@@ -224,7 +229,7 @@ class WeakBaselineAgent:
                 "sso",
             ]
         ):
-            return Priority.HIGH
+            return Priority.CRITICAL
 
         if category == TicketCategory.SECURITY:
             return Priority.HIGH
@@ -365,11 +370,10 @@ class WeakBaselineAgent:
                     action_type=ActionType.RESOLVE,
                     ticket_id=ticket_id,
                     response_text=(
-                        "Your password has been reset, all active sessions have been revoked, "
-                        "MFA has been enabled on the account, and we flagged the suspicious login "
-                        "attempt for further investigation. Your account should now be secure."
+                        "We completed the password reset, revoke sessions procedure, and MFA protection update. "
+                        "The suspicious login attempt was flagged and your account is now secure."
                     ),
-                    resolution_code="account_secured"
+                    resolution_code="security_lockdown_completed"
                 ),
                 "The required recovery and security actions are complete, so I can safely close the case.",
             )

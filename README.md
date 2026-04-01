@@ -206,7 +206,7 @@ pip install -r requirements.txt
 Run the API server:
 
 ```bash
-python -m server
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
 Run the baseline:
