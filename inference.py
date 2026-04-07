@@ -393,28 +393,49 @@ def run_all_tasks() -> None:
     env = CustomerSupportEnv()
     agent = WeakBaselineAgent()
 
-    print("Running finalized customer support OpenEnv baseline inference")
     for task_id in env.tasks:
         observation = env.reset(task_id=task_id)
         done = False
-        print(f"\nTask: {task_id}")
+        _log_start(task_id)
         while not done:
             action, rationale = agent.next_action(observation)
             observation, reward, done, info = env.step(action)
-            print(
-                f"  step={observation.steps_taken} stage={observation.current_status.value} "
-                f"mood={observation.customer_mood.value} action={action.action_type.value} "
-                f"reward={reward.score:.3f} cumulative={reward.cumulative_score:.3f}"
-            )
-            print(
-                f"    rationale={rationale} progress={info['progress']} mistakes={info['mistakes']} "
-                f"sla_remaining={info['sla_remaining']} notes={info['notes']}"
+            _log_step(
+                task_id=task_id,
+                step_number=observation.steps_taken,
+                action_type=getattr(action.action_type, "value", str(action.action_type)),
+                reward_score=reward.score,
+                cumulative_score=reward.cumulative_score,
+                done=done,
             )
 
         final_state = env.state()
         final_score = grade_task(task_id, final_state)
-        print(f"  final_state={final_state}")
-        print(f"  deterministic_score={final_score:.3f}")
+        steps_taken = final_state["steps_taken"] if isinstance(final_state, dict) and "steps_taken" in final_state else observation.steps_taken
+        _log_end(task_id=task_id, final_score=final_score, steps_taken=steps_taken)
+
+
+def _log_start(task_id: str) -> None:
+    print(f"[START] task={task_id}", flush=True)
+
+
+def _log_step(
+    task_id: str,
+    step_number: int,
+    action_type: str,
+    reward_score: float,
+    cumulative_score: float,
+    done: bool,
+) -> None:
+    print(
+        f"[STEP] task={task_id} step={step_number} action={action_type} "
+        f"reward={reward_score:.3f} cumulative={cumulative_score:.3f} done={done}",
+        flush=True,
+    )
+
+
+def _log_end(task_id: str, final_score: float, steps_taken: int) -> None:
+    print(f"[END] task={task_id} score={final_score:.3f} steps={steps_taken}", flush=True)
 
 
 if __name__ == "__main__":
