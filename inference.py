@@ -11,12 +11,17 @@ from graders import grade_task
 from models import Action, ActionType, Observation, Priority, TicketCategory
 
 
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3-8B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+
 class WeakBaselineAgent:
     def __init__(self) -> None:
 
-        self.api_base_url = os.getenv("API_BASE_URL")
-        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN")
-        self.model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
+        self.api_base_url = API_BASE_URL
+        self.api_key = os.getenv("OPENAI_API_KEY") or HF_TOKEN
+        self.model_name = MODEL_NAME
         self.client = (
             OpenAI(base_url=self.api_base_url, api_key=self.api_key)
             if self.api_base_url and self.api_key
