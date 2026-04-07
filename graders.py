@@ -26,7 +26,7 @@ def grade_task(task_id: str, state: Dict[str, Any]) -> float:
     score -= 0.08 if _looks_like_single_strategy(state) else 0.0
     score -= 0.06 if _keyword_spam_penalty(state.get("last_agent_message", "")) else 0.0
 
-    return round(max(0.0, min(score, 1.0)), 4)
+    return round(max(0.001, min(score, 0.999)), 4)
 
 
 def grade_easy_task(state: Dict[str, Any]) -> float:
